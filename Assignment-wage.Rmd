@@ -1,0 +1,154 @@
+---
+title: "Assignment-Wage"
+author: "Nihal Biswas"
+date: "2023-04-22"
+output: html_document
+---
+
+
+# Importing Data
+
+```{r}
+setwd("C:\\Users\\nihal\\OneDrive\\Desktop\\college\\sem 2\\Economectircs")
+library(readxl)
+wage=read_excel("wage_dummy.xls",sheet = "Sheet1")
+head(wage)
+```
+
+- The data set have 114 observations and 5 variables. 
+
+
+## Treatment of data
+
+```{r}
+str(wage)
+```
+
+- The wage and age is numeric and gender, job type and education are character. So the variable types are also consistent. However, in our future study we need to change the character variables into factors.
+
+## Missing values
+
+```{r}
+sum(is.na(wage))
+```
+
+- There are no missing values in the data set.
+
+# Data visualization
+
+```{r}
+library(ggplot2)
+ggplot(wage,aes(AGE,WI))+geom_point(aes(color=JOBTYPE,shape=JOBTYPE))+facet_grid(~wage$GENDER)+xlab("Age")+ylab("Wage")
+```
+
+- We do see a pattern in the data that is all female are temporary employees and all male are permanent employees.
+
+
+# The mean wages for different categories with respect to sex and educational level of the workers
+
+```{r}
+aggregate(wage$WI,by=list(wage$GENDER,wage$EDUCATION),mean)
+
+```
+
+- Over here Female with higher education has the maximum average weekly wage.
+- And male with no primary education has the minimum average weekly wage.
+
+
+# Linear model
+
+### Creating Dummy variables
+
+```{r}
+library(fastDummies)
+wage=dummy_cols(wage,select_columns = "GENDER")
+wage=dummy_cols(wage,select_columns = "JOBTYPE")
+wage=dummy_cols(wage,select_columns = "EDUCATION")
+head(wage)
+```
+
+- Created dummy variables for Gender, Job Type, and Education.
+
+
+### Building Model
+
+```{r}
+model1=lm(log(wage$WI)~wage$AGE+wage$GENDER_male+wage$EDUCATION_higher+wage$EDUCATION_secondary+wage$EDUCATION_primary+wage$JOBTYPE_permanent)
+summary(model1)
+```
+
+
+Model Inference
+
+- The independent variables in the model like Age, Gender, Higher education,Secondary Education are statistically significant. 
+- The job type permanent is having no slope which is why we are not able to get any values.
+- The result of the secondary education is not sufficient as the P value of the T statistics is 0.34940.
+- The mean and median of the error term is very close to 0. 
+- The F statistic value is more than 4. So the model is able to significantly determine the wage values.
+- Even though the R value is low but the F statistics value is high. Moreover, the p-value for the F statistics is also low which implies that the model is significant.
+
+
+Inference
+
+- Yes, Gender and Education are having differential effect on the weekly earnings.
+- Female with secondary education and a particular age is earning a weekly wage of e^(3.617093+0.540541+0.032446)= Rs 66.02807 and female with higher education which same age is earning e^(3.617093+0.752161+0.032446)= Rs 81.58945. We do see a difference in weekly wage when the education level is increased.
+- Person who is female at a particular age and is having a higher education is likely to earn e^(3.617093+0.752161+0.032446)= Rs 81.58945 per week. However, Male with a higher education at that same age is earning e^(3.617093-0.615762+0.752161+0.032446)= Rs 44.077. So we can see that changing the gender is also affecting the weekly wage of a person.
+
+
+### Normality of the error Term
+
+```{r}
+library(ggplot2)
+ggplot(model1,aes(model1$residuals,..density..))+geom_histogram(bins = 40)+geom_density()+xlab("Residuals")
+
+```
+
+- We can see from the above diagram that the Residual density curve is normally distribution. 
+
+
+
+```{r}
+qqnorm(model1$residuals)
+
+```
+
+- The qq-plot is also showing that the error terms are distributed normally. 
+
+
+# Interaction between gender and the level of education
+
+```{r}
+model2=lm(log(wage$WI)~wage$GENDER_male+wage$EDUCATION_higher+wage$EDUCATION_secondary+wage$EDUCATION_primary)
+summary(model2)
+```
+
+Inference
+
+- The coefficient of gender, higher education and secondary education in this model is statistically significant. Whereas, Primary education is not significant.
+- Even though the new model is having a lower R-squared value, but the value of F-statistics is more that 4 which implies that the model is good fit.
+- We can see from the -ve sign of the coefficient that the gender which is male in this case is having an inverse relationship with wage per week. Thus as we move from female to male there is a reduction in wage of income per week.
+- Furthermore, yes there is an interaction between gender and level of education. As can been seen from the model that as the level of education goes up from secondary to higher secondary there is also and increase in the value of their respective coefficients.
+- From this new model we can see that 
+Person who is female and is having higher education is earning exp(4.69413+0.95802)= Rs 284.9034
+Person who is male and is having higher education is earning exp(4.69413+0.95802-0.78057)= Rs 130.527
+- And we have also seen from the above results that the average weekly wage of female with higher education is Rs 421.93333.
+  However, for males with higher education has an average weekly wage of Rs 156.41667. So, the male workers with same level of education will earn lower weekly wages than the female.
+
+
+### Normality of the error term
+
+```{r}
+qqnorm(model2$residuals)
+```
+
+-  We can see from the above diagram that the points are not scattered and follows a diagonal path which signifies that the residuals are distributed normally for this model.
+
+
+
+
+
+
+
+
+
+
